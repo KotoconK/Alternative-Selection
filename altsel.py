@@ -32,6 +32,41 @@ def get_face_neighbors(face):
     return neighbors
 
 
+SAVED_COMPONENTS = []
+# --- Save selection---
+def save_selection(*args):
+    global SAVED_COMPONENTS
+
+    SAVED_COMPONENTS = cmds.ls(selection=True, flatten=True) or []
+
+    cmds.inViewMessage(
+        amg="Selection Saved",
+        pos="midCenter",
+        fade=True
+    )
+def add_saved_selection(*args):
+    global SAVED_COMPONENTS
+
+    if not SAVED_COMPONENTS:
+        cmds.warning("No saved selection found.")
+        return
+
+    current = cmds.ls(selection=True, flatten=True) or []
+
+    merged = list(set(current + SAVED_COMPONENTS))
+
+    cmds.select(merged, replace=True)
+    
+def restore_saved_selection(*args):
+    global SAVED_COMPONENTS
+
+    if not SAVED_COMPONENTS:
+        cmds.warning("No saved selection found.")
+        return
+
+    cmds.select(SAVED_COMPONENTS, replace=True)
+# --- --------  ---
+    
 def validate_face_loop(faces):
     if not faces:
         return False, "No faces selected."
@@ -131,26 +166,48 @@ def select_every_n_vertices(*args):
     step = cmds.intSliderGrp("vertexEveryNStepSlider", query=True, value=True)
     offset = cmds.intSliderGrp("vertexEveryNOffsetSlider", query=True, value=True)
 
-    cmds.selectPref(trackSelectionOrder=True)
-    verts = cmds.ls(orderedSelection=True, flatten=True) or []
+    verts = cmds.ls(selection=True, flatten=True) or []
+
     if not verts:
         cmds.warning("No selection found.")
         return
 
     if not all(".vtx[" in v for v in verts):
         cmds.warning("Please select vertices only.")
-        cmds.confirmDialog(
-            title="Invalid Selection",
-            message="Please select vertices only.",
-            button=["OK"],
-            defaultButton="OK"
-        )
         return
 
-    result = verts[offset::step]
+    # Agrupar por fila usando la coordenada Y
+    rows = {}
+
+    for vtx in verts:
+        pos = cmds.pointPosition(vtx, world=True)
+
+        # redondeo para evitar errores de precisión
+        row_key = round(pos[1], 4)
+
+        if row_key not in rows:
+            rows[row_key] = []
+
+        rows[row_key].append((pos[0], vtx))
+
+    result = []
+
+    # ordenar filas de arriba a abajo
+    sorted_rows = sorted(rows.keys(), reverse=True)
+
+    for row in sorted_rows:
+
+        row_verts = rows[row]
+
+        # ordenar de izquierda a derecha
+        row_verts.sort(key=lambda x: x[0])
+
+        ordered = [v[1] for v in row_verts]
+
+        result.extend(ordered[offset::step])
 
     if not result:
-        cmds.warning("No vertices were selected with the current values.")
+        cmds.warning("No vertices were selected.")
         return
 
     cmds.select(result, replace=True)
@@ -278,7 +335,41 @@ def build_ui():
 
     cmds.setParent("..")
     cmds.setParent("..")
+    
+    cmds.separator(height=10)
 
+    cmds.rowColumnLayout(
+        numberOfColumns=3,
+        columnWidth=[
+            (1, 120),
+            (2, 120),
+            (3, 120)
+        ],
+        columnSpacing=[
+            (1, 8),
+            (2, 8)
+        ]
+    )
+
+    cmds.button(
+        label="💾 Save Sel",
+        height=30,
+        command=save_selection
+    )
+
+    cmds.button(
+        label="🔄 Restore Sel",
+        height=30,
+        command=restore_saved_selection
+    )
+
+    cmds.button(
+        label="➕ Add Saved Sel",
+        height=30,
+        command=add_saved_selection
+    )
+
+    cmds.setParent("..")
     cmds.separator(height=4, style="none")  
     cmds.text(label="Developed by Álvaro_A", align="center")
     cmds.separator(height=8, style="none")  
