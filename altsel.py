@@ -126,7 +126,34 @@ def select_every_n_edges(*args):
         return
 
     mel.eval('polySelectEdgesEveryN "edgeRing" %d;' % step)
+    
+def select_every_n_vertices(*args):
+    step = cmds.intSliderGrp("vertexEveryNStepSlider", query=True, value=True)
+    offset = cmds.intSliderGrp("vertexEveryNOffsetSlider", query=True, value=True)
 
+    cmds.selectPref(trackSelectionOrder=True)
+    verts = cmds.ls(orderedSelection=True, flatten=True) or []
+    if not verts:
+        cmds.warning("No selection found.")
+        return
+
+    if not all(".vtx[" in v for v in verts):
+        cmds.warning("Please select vertices only.")
+        cmds.confirmDialog(
+            title="Invalid Selection",
+            message="Please select vertices only.",
+            button=["OK"],
+            defaultButton="OK"
+        )
+        return
+
+    result = verts[offset::step]
+
+    if not result:
+        cmds.warning("No vertices were selected with the current values.")
+        return
+
+    cmds.select(result, replace=True)
 
 def build_ui():
     if cmds.window(WINDOW_NAME, exists=True):
@@ -203,6 +230,51 @@ def build_ui():
     )
 
     cmds.button(label="Select Edges", height=34, command=select_every_n_edges)
+
+    cmds.setParent("..")
+    cmds.setParent("..")
+
+    # Vertices
+    cmds.frameLayout(
+        label="Vertices",
+        collapsable=False,
+        marginWidth=14,
+        marginHeight=14,
+        parent=main_layout
+    )
+
+    cmds.columnLayout(adjustableColumn=True, rowSpacing=8)
+
+    cmds.text(
+        label="Uses the current vertex selection order.",
+        align="left"
+    )
+
+    cmds.intSliderGrp(
+        "vertexEveryNStepSlider",
+        label="Every how many vertices",
+        field=True,
+        minValue=1,
+        maxValue=20,
+        value=2,
+        columnWidth=[(1, 140), (2, 50), (3, 220)]
+    )
+
+    cmds.intSliderGrp(
+        "vertexEveryNOffsetSlider",
+        label="Offset / start",
+        field=True,
+        minValue=0,
+        maxValue=20,
+        value=0,
+        columnWidth=[(1, 140), (2, 50), (3, 220)]
+    )
+
+    cmds.button(
+        label="Select Vertices",
+        height=34,
+        command=select_every_n_vertices
+    )
 
     cmds.setParent("..")
     cmds.setParent("..")
