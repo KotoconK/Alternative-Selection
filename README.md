@@ -98,3 +98,7 @@ Resulta útil para modelado, retopología, creación de patrones, panelado, fluj
 <p>
 Desarrollado por Álvaro_A
 </p>
+
+<img width="800" height="420" alt="image" src="https://i.ibb.co/S7PhjfGm/altsel-1.gif" />
+
+
