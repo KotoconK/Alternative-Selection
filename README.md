@@ -1,4 +1,4 @@
-<img width="463" height="583" alt="image" src="https://github.com/user-attachments/assets/0bf26085-df8f-4a56-a274-52072551d2a5" />
+<img width="454" height="642" alt="image" src="https://github.com/user-attachments/assets/10f45a40-bb4a-474d-83ee-32f1a1a5b530" />
 <h1>Select Every N Components for Maya</h1>
 
 <p>
